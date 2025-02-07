@@ -1,4 +1,4 @@
-package com.example.numbercomposition
+package com.example.numbercomposition.presentation
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
