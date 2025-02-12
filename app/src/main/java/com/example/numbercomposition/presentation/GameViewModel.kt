@@ -5,6 +5,7 @@ import android.os.CountDownTimer
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
 import com.example.numbercomposition.R
 import com.example.numbercomposition.data.GameRepositoryImpl
 import com.example.numbercomposition.domain.entities.GameResult
@@ -14,18 +15,18 @@ import com.example.numbercomposition.domain.entities.Question
 import com.example.numbercomposition.domain.usecases.GenerateQuestionUseCase
 import com.example.numbercomposition.domain.usecases.GetGameSettingsUseCase
 
-class GameViewModel(application: Application): AndroidViewModel(application) {
-    private val context = application
-
-    private val repository = GameRepositoryImpl
+class GameViewModel(
+    private val application: Application,
+    private val level: Level
+): ViewModel() {
 
     private lateinit var gameSettings: GameSettings
-    private lateinit var level: Level
 
     private var timer: CountDownTimer? = null
     private var countOfRightAnswers = 0
     private var countOfQuestions = 0
 
+    private val repository = GameRepositoryImpl
     private val generateQuestionUseCase = GenerateQuestionUseCase(repository)
     private val getGameSettingsUseCase = GetGameSettingsUseCase(repository)
 
@@ -62,6 +63,10 @@ class GameViewModel(application: Application): AndroidViewModel(application) {
     val gameResult: LiveData<GameResult>
         get() = _gameResult
 
+    init {
+        startGame()
+    }
+
     fun chooseAnswer(number: Int) {
         checkAnswer(number)
         generateQuestion()
@@ -75,8 +80,8 @@ class GameViewModel(application: Application): AndroidViewModel(application) {
         countOfQuestions++
     }
 
-    fun startGame(level: Level) {
-        getGameSettingsUseCase(level)
+    private fun startGame() {
+        getGameSettings()
         startTimer()
         generateQuestion()
         updateProgress()
@@ -85,7 +90,7 @@ class GameViewModel(application: Application): AndroidViewModel(application) {
     private fun updateProgress() {
         val percent = calculatePercentOfRightAnswers()
         _percentOfRightAnswers.value = percent
-        _progressAnswers.value = context.resources.getString(
+        _progressAnswers.value = application.resources.getString(
             R.string.progress_answers,
             countOfRightAnswers.toString(),
             gameSettings.minCountOfRightAnswers.toString()
@@ -101,8 +106,7 @@ class GameViewModel(application: Application): AndroidViewModel(application) {
         return ((countOfRightAnswers / countOfQuestions.toDouble()) * 100).toInt()
     }
 
-    private fun getGameSettings(level: Level) {
-        this.level = level
+    private fun getGameSettings() {
         this.gameSettings = getGameSettingsUseCase(level)
         _minPercent.value = gameSettings.minPercentOfRightAnswers
     }
